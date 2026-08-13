@@ -2,6 +2,7 @@ package command
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/mrsibe/godis/internal/database"
@@ -9,6 +10,10 @@ import (
 )
 
 func bulk(s string) resp.Value { return resp.Value{Type: resp.BulkString, String: s} }
+
+func setString(db *database.DB, key, value string) {
+	db.Set(key, &database.Object{Type: database.StringType, Value: value})
+}
 
 func TestSet(t *testing.T) {
 	db := database.New()
@@ -22,8 +27,8 @@ func TestSet(t *testing.T) {
 
 	// 验证真的写进去了
 	value, ok := db.Get("name")
-	if !ok || value != "godis" {
-		t.Errorf("db.Get(\"name\") = (%q, %v), want (\"godis\", true)", value, ok)
+	if !ok || value.Value != "godis" {
+		t.Errorf("db.Get(\"name\") = (%v, %v), want (\"godis\", true)", value.Value, ok)
 	}
 }
 
@@ -47,13 +52,28 @@ func TestSetWrongArgs(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	db := database.New()
-	db.Set("name", "godis")
+	setString(db, "name", "godis")
 
 	got := Execute(db, resp.Value{Type: resp.Array, Array: []resp.Value{
 		bulk("GET"), bulk("name"),
 	}})
 	if want := (resp.Value{Type: resp.BulkString, String: "godis"}); !reflect.DeepEqual(got, want) {
 		t.Errorf("GET = %+v, want %+v", got, want)
+	}
+}
+
+func TestGetWrongType(t *testing.T) {
+	db := database.New()
+
+	// 存一个非 string 类型的 Object，GET 应返回 WRONGTYPE
+	db.Set("h", &database.Object{Type: database.HashType, Value: map[string]string{"a": "b"}})
+
+	got := Execute(db, resp.Value{Type: resp.Array, Array: []resp.Value{bulk("GET"), bulk("h")}})
+	if got.Type != resp.Error {
+		t.Fatalf("GET wrong type = %+v, want Error", got)
+	}
+	if !strings.HasPrefix(got.String, "WRONGTYPE") {
+		t.Errorf("GET wrong type 错误消息 = %q, want WRONGTYPE 前缀", got.String)
 	}
 }
 
@@ -88,7 +108,7 @@ func TestDel(t *testing.T) {
 	}
 
 	// 删除存在的 key → 1
-	db.Set("key", "value")
+	setString(db, "key", "value")
 	got = Execute(db, resp.Value{Type: resp.Array, Array: []resp.Value{bulk("DEL"), bulk("key")}})
 	if want := (resp.Value{Type: resp.Integer, Integer: 1}); !reflect.DeepEqual(got, want) {
 		t.Errorf("DEL existing = %+v, want %+v", got, want)
@@ -113,7 +133,7 @@ func TestDelWrongArgs(t *testing.T) {
 
 func TestCommandNameCaseInsensitive(t *testing.T) {
 	db := database.New()
-	db.Set("k", "v")
+	setString(db, "k", "v")
 
 	for _, name := range []string{"GET", "get", "Get", "gEt"} {
 		got := Execute(db, resp.Value{Type: resp.Array, Array: []resp.Value{bulk(name), bulk("k")}})
@@ -125,7 +145,7 @@ func TestCommandNameCaseInsensitive(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	db := database.New()
-	db.Set("a", "1")
+	setString(db, "a", "1")
 
 	// 存在的 key → 1
 	got := Execute(db, resp.Value{Type: resp.Array, Array: []resp.Value{bulk("EXISTS"), bulk("a")}})
@@ -140,7 +160,7 @@ func TestExists(t *testing.T) {
 	}
 
 	// 多个 key，只数存在的 → 2
-	db.Set("b", "2")
+	setString(db, "b", "2")
 	got = Execute(db, resp.Value{Type: resp.Array, Array: []resp.Value{
 		bulk("EXISTS"), bulk("a"), bulk("b"), bulk("nope"),
 	}})

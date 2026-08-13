@@ -61,7 +61,10 @@ func set(db *database.DB, args []resp.Value) resp.Value {
 		return resp.Value{Type: resp.Error, String: "ERR wrong number of arguments for 'set' command"}
 	}
 
-	db.Set(args[0].String, args[1].String)
+	db.Set(args[0].String, &database.Object{
+		Type:  database.StringType,
+		Value: args[1].String,
+	})
 
 	return resp.Value{Type: resp.SimpleString, String: "OK"}
 }
@@ -71,12 +74,16 @@ func get(db *database.DB, args []resp.Value) resp.Value {
 		return resp.Value{Type: resp.Error, String: "ERR wrong number of arguments for 'get' command"}
 	}
 
-	value, ok := db.Get(args[0].String)
+	obj, ok := db.Get(args[0].String)
 	if !ok {
 		return resp.Value{Type: resp.BulkString, Null: true}
 	}
+	if obj.Type != database.StringType {
+		return resp.Value{Type: resp.Error,
+			String: "WRONGTYPE Operation against a key holding the wrong kind of value"}
+	}
 
-	return resp.Value{Type: resp.BulkString, String: value}
+	return resp.Value{Type: resp.BulkString, String: obj.Value.(string)}
 }
 
 func del(db *database.DB, args []resp.Value) resp.Value {
