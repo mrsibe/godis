@@ -140,7 +140,6 @@ func TestWriteNull(t *testing.T) {
 }
 
 func TestWriteMultipleValues(t *testing.T) {
-	// 连续写多条回复（服务器循环处理命令的场景）
 	got := writeToString(t,
 		Value{Type: Integer, Integer: 1},
 		Value{Type: BulkString, String: "x"},

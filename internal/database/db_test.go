@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-// strObj 构造一个字符串类型的 Object，方便测试。
 func strObj(s string) *Object {
 	return &Object{Type: StringType, Value: s}
 }
@@ -79,7 +78,6 @@ func TestDelMissingKey(t *testing.T) {
 func TestEmptyKeyValue(t *testing.T) {
 	db := New()
 
-	// 空 key 和空 value 都应该能正常存取
 	db.Set("", strObj("value"))
 	got, ok := db.Get("")
 	if !ok || got.Value != "value" {
@@ -113,7 +111,7 @@ func TestManyKeys(t *testing.T) {
 	}
 }
 
-// TestConcurrent 用多个 goroutine 并发读写，配合 go test -race 验证并发安全。
+// TestConcurrent 需配合 go test -race 检查数据竞争。
 func TestConcurrent(t *testing.T) {
 	db := New()
 
@@ -136,7 +134,6 @@ func TestConcurrent(t *testing.T) {
 					t.Errorf("Get(%q) = (%q, %v), want (%q, true)", key, got.Value, ok, key)
 				}
 
-				// 删除一半的 key，模拟真实读写混合
 				if i%2 == 0 {
 					if ok := db.Del(key); !ok {
 						t.Errorf("Del(%q) returned false, want true", key)
@@ -151,7 +148,6 @@ func TestConcurrent(t *testing.T) {
 
 	wg.Wait()
 
-	// 验证残留数据正确：奇数 key 应保留，偶数 key 应已删除
 	for g := range goroutines {
 		prefix := fmt.Sprintf("g%d", g)
 		for i := range opsPerGoroutine {

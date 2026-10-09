@@ -7,11 +7,9 @@ import (
 	"github.com/mrsibe/godis/internal/resp"
 )
 
-// Handler 是单个命令的执行函数，接收数据库和参数，返回 RESP 回复。
+// Handler 执行命令并返回 RESP 回复，args 不含命令名。
 type Handler func(db *database.DB, args []resp.Value) resp.Value
 
-// handlers 注册所有命令，命令名统一为大写。
-// 新增命令时只需实现一个 Handler 并在这里登记一行。
 var handlers = map[string]Handler{
 	"PING":   ping,
 	"ECHO":   echo,
@@ -21,8 +19,8 @@ var handlers = map[string]Handler{
 	"EXISTS": exists,
 }
 
-// Execute 分发并执行一条命令，返回 RESP 回复。
-// req 是由 Parser 解析出的 Array，首元素为命令名，其余为参数。
+// Execute 按命令名分发请求，命令名不区分大小写。
+// req 必须为非空 RESP 数组，首元素为命令名，其余为参数。
 func Execute(db *database.DB, req resp.Value) resp.Value {
 	if req.Type != resp.Array || len(req.Array) == 0 {
 		return resp.Value{Type: resp.Error, String: "ERR invalid command"}

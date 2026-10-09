@@ -11,13 +11,13 @@ import (
 	"github.com/mrsibe/godis/internal/resp"
 )
 
-// Server 是 godis 的 TCP 服务端。
+// Server 通过 TCP 处理 RESP 命令，所有连接共享同一数据库。
 type Server struct {
 	addr string
 	db   *database.DB
 }
 
-// New 基于监听地址 addr 创建一个 Server，并初始化空数据库。
+// New 创建监听地址为 addr、数据库为空的服务端。
 func New(addr string) *Server {
 	return &Server{
 		addr: addr,
@@ -25,7 +25,8 @@ func New(addr string) *Server {
 	}
 }
 
-// Start 监听 addr 并循环处理连接，直到返回错误。
+// Start 启动监听并为每个连接创建独立的 goroutine。
+// 监听失败时返回错误，接受连接失败时记录日志并继续。
 func (s *Server) Start() error {
 	listener, err := net.Listen("tcp", s.addr)
 	if err != nil {
@@ -54,7 +55,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 	for {
 		value, err := parser.Parse()
 		if err != nil {
-			// 客户端正常断开连接时静默退出
+			// 正常断开连接不记录错误。
 			if errors.Is(err, io.EOF) {
 				return
 			}

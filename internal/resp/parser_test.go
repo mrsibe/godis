@@ -15,7 +15,7 @@ func TestParseBulkString(t *testing.T) {
 		{name: "simple", input: "$5\r\nhello\r\n", want: Value{Type: BulkString, String: "hello"}},
 		{name: "empty", input: "$0\r\n\r\n", want: Value{Type: BulkString, String: ""}},
 		{name: "null", input: "$-1\r\n", want: Value{Type: BulkString, Null: true}},
-		// bulk string 内部可以包含 \r\n，不受 readLine 的换行切割影响
+		// 批量字符串按字节长度读取，内容中的 CRLF 不作为分隔符。
 		{name: "withCRLF", input: "$4\r\na\r\nb\r\n", want: Value{Type: BulkString, String: "a\r\nb"}},
 	}
 
@@ -84,7 +84,6 @@ func TestParseArray(t *testing.T) {
 }
 
 func TestParseUnsupportedType(t *testing.T) {
-	// SimpleString、Error、Integer 的类型常量已定义，但 parser 尚未实现它们
 	inputs := []string{
 		"+OK\r\n",
 		"-ERR unknown command\r\n",
@@ -125,7 +124,6 @@ func TestParseErrors(t *testing.T) {
 }
 
 func TestParseMultipleCommands(t *testing.T) {
-	// 模拟一个 TCP 连接里连续到达多条命令
 	p := NewParser(strings.NewReader("$3\r\nfoo\r\n$3\r\nbar\r\n"))
 
 	first, err := p.Parse()

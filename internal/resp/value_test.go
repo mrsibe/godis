@@ -2,7 +2,6 @@ package resp
 
 import "testing"
 
-// TestTypeConstants 验证各 Type 常量对应正确的 RESP2 协议字节。
 func TestTypeConstants(t *testing.T) {
 	tests := []struct {
 		name string
@@ -25,7 +24,6 @@ func TestTypeConstants(t *testing.T) {
 	}
 }
 
-// TestValueZeroValue 验证 Value 的零值是合理的中性状态。
 func TestValueZeroValue(t *testing.T) {
 	var v Value
 
@@ -46,7 +44,6 @@ func TestValueZeroValue(t *testing.T) {
 	}
 }
 
-// TestValueFields 验证各种 RESP 类型的 Value 构造后字段正确。
 func TestValueFields(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -71,7 +68,6 @@ func TestValueFields(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// 此处没有序列化方法，仅验证构造的 Value 字段语义
 			switch tt.value.Type {
 			case Integer:
 				if tt.value.String != "" {
@@ -84,7 +80,6 @@ func TestValueFields(t *testing.T) {
 				}
 				_ = tt.value.Array
 			default:
-				// 字符串类类型只应使用 String 字段
 				if tt.value.Integer != 0 || len(tt.value.Array) != 0 {
 					t.Errorf("%q Value 不应带 Integer/Array 字段, got %d/%v", tt.value.Type, tt.value.Integer, tt.value.Array)
 				}
@@ -93,7 +88,6 @@ func TestValueFields(t *testing.T) {
 	}
 }
 
-// TestValueArrayNested 验证嵌套数组的深度结构。
 func TestValueArrayNested(t *testing.T) {
 	value := Value{
 		Type: Array,

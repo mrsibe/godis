@@ -2,20 +2,17 @@ package database
 
 import "sync"
 
-// DB 是并发安全的字符串键值存储，所有方法都可被多个 goroutine 同时调用。
 type DB struct {
 	mu   sync.RWMutex
 	data map[string]*Object
 }
 
-// New 创建并返回一个空的 DB。
 func New() *DB {
 	return &DB{
 		data: make(map[string]*Object),
 	}
 }
 
-// Set 将 key 映射到 value，覆盖已存在的值。
 func (db *DB) Set(key string, value *Object) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -23,7 +20,6 @@ func (db *DB) Set(key string, value *Object) {
 	db.data[key] = value
 }
 
-// Get 返回 key 对应的值；key 不存在时返回零值和 false。
 func (db *DB) Get(key string) (*Object, bool) {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
@@ -32,7 +28,6 @@ func (db *DB) Get(key string) (*Object, bool) {
 	return value, ok
 }
 
-// Del 删除 key，返回是否真的删除了；key 不存在时返回 false。
 func (db *DB) Del(key string) bool {
 	db.mu.Lock()
 	defer db.mu.Unlock()

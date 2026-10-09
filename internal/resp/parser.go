@@ -8,19 +8,19 @@ import (
 	"strings"
 )
 
-// Parser 是 RESP 协议的流式解析器，按类型前缀递归解析输入流。
+// Parser 从输入流解析 RESP2 数组和批量字符串。
 type Parser struct {
 	reader *bufio.Reader
 }
 
-// NewParser 基于 rd 创建一个 Parser。
+// NewParser 创建从 rd 读取数据的解析器。
 func NewParser(rd io.Reader) *Parser {
 	return &Parser{
 		reader: bufio.NewReader(rd),
 	}
 }
 
-// Parse 读取并解析一个完整的 RESP 值。
+// Parse 读取下一个 RESP 值，不支持的类型返回错误。
 func (p *Parser) Parse() (Value, error) {
 	prefix, err := p.reader.ReadByte()
 	if err != nil {
@@ -48,7 +48,7 @@ func (p *Parser) parseArray() (Value, error) {
 		return Value{}, err
 	}
 
-	// 负长度（*-1）表示 null array
+	// RESP2 用 *-1 表示空值数组。
 	if length < 0 {
 		return Value{Type: Array, Null: true}, nil
 	}
@@ -81,7 +81,7 @@ func (p *Parser) parseBulkString() (Value, error) {
 		return Value{}, err
 	}
 
-	// 负长度（$-1）表示 null bulk string
+	// RESP2 用 $-1 表示空值批量字符串。
 	if length < 0 {
 		return Value{
 			Type: BulkString,

@@ -7,20 +7,19 @@ import (
 	"strconv"
 )
 
-// Writer 是 RESP 协议的序列化器，将 Value 写入底层 io.Writer。
+// Writer 将 RESP2 值写入带缓冲的输出流。
 type Writer struct {
 	writer *bufio.Writer
 }
 
-// NewWriter 基于 w 创建一个 Writer。
+// NewWriter 创建向 w 写入数据的序列化器。
 func NewWriter(w io.Writer) *Writer {
 	return &Writer{
 		writer: bufio.NewWriter(w),
 	}
 }
 
-// Write 将一个 Value 序列化为 RESP2 协议写入缓冲。
-// 写入完成后需要调用 Flush 才会真正落到下层 io.Writer。
+// Write 将 value 编码为 RESP2，写入后需调用 [Writer.Flush] 刷新缓冲。
 func (w *Writer) Write(value Value) error {
 	if value.Null {
 		if value.Type == Array {
@@ -45,6 +44,7 @@ func (w *Writer) Write(value Value) error {
 	}
 }
 
+// Flush 将缓冲中的数据写入底层输出流。
 func (w *Writer) Flush() error {
 	return w.writer.Flush()
 }
